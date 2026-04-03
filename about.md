@@ -1,3 +1,6 @@
-# Template Mod
+# THE BAN SOMEONE MOD
 
-Edit about.md to change this
+think someone is a chud? ban them from your game!
+this mod messes with like everything of theirs
+
+(everything this mod does is visual and doesnt affect anything on servers)

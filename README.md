@@ -1,5 +1,5 @@
-# banrifctmovement
-This is where she makes a mod.
+# THE BAN SOMEONE MOD
+ban the chud you hate
 
 <img src="logo.png" width="150" alt="the mod's logo" />
 

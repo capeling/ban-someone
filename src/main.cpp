@@ -2,34 +2,88 @@
 
 using namespace geode::prelude;
 
-#define RIFCT_ACC_ID 8927557
-#define RIFCT_ALT_ACC_ID 32518396
+static std::string person = "";
+static int personAccountID = -1;
 
-static constexpr bool isRifct(int accountID) {
-    return accountID == RIFCT_ACC_ID || accountID == RIFCT_ALT_ACC_ID;
+static constexpr bool isPerson(int accountID) {
+    return accountID == personAccountID;
+}
+
+static void lowerString(std::string& str) {
+    for (auto& c : str) {
+        c = tolower(c);
+    }
+}
+
+class UserGetter : public CCObject, public LevelManagerDelegate {
+public:
+    static UserGetter* create(const std::string& user) {
+        auto ret = new UserGetter;
+        ret->m_searchObject = GJSearchObject::create(SearchType::Users, user);
+        GameLevelManager::get()->m_levelManagerDelegate = ret;
+        GameLevelManager::get()->getUsers(ret->m_searchObject);
+        return ret;
+    }
+
+    virtual void loadLevelsFinished(cocos2d::CCArray* levels, char const* key) {
+        auto score = typeinfo_cast<GJUserScore*>(levels->objectAtIndex(0));
+        if (!score) {
+            invalidUser();
+            return;
+        }
+        log::info("Found {} [{}]", score->m_userName, score->m_accountID);
+        personAccountID = score->m_accountID;
+        this->release();
+    }
+
+    virtual void loadLevelsFailed(char const* key) {
+        invalidUser();
+        this->release();
+    }
+
+    void invalidUser() {
+        log::info("Couldnt find {}", person);
+        Notification::create(fmt::format("[BAN SOMEONE MOD] Couldn't find {}!", person), NotificationIcon::Error)->show();
+        personAccountID = -1;
+    }
+
+protected:
+    Ref<GJSearchObject> m_searchObject = nullptr;
+};
+
+$on_mod(Loaded) {
+    auto mod = Mod::get();
+
+    person = mod->getSettingValue<std::string>("person");
+    lowerString(person);
+    UserGetter::create(person);
+
+    listenForSettingChanges<std::string>("person", [](std::string v) {
+        lowerString(v);
+        person = v;
+        UserGetter::create(v);
+    });
 }
 
 #include <Geode/modify/ProfilePage.hpp>
 class $modify(ProfilePage) {
 
     struct Fields {
-        bool loadedRifct = false;
-        bool isRifct = false;
+        bool loadedPerson = false;
+        bool isPerson = false;
     };
 
-    void loadRifctProfile(int accountID) {
+    void loadPersonProfile(int accountID) {
         auto fields = m_fields.self();
-        if (fields->loadedRifct)
+        if (fields->loadedPerson)
             return;
 
-        fields->loadedRifct = true;
+        fields->loadedPerson = true;
 
-        if (!isRifct(accountID))
+        if (!isPerson(accountID))
             return;
 
-        fields->isRifct = true;
-
-        // TODO: fix rifcts profile
+        fields->isPerson = true;
 
         if (auto socialMenu = typeinfo_cast<CCMenu*>(m_mainLayer->getChildByID("socials-menu"))) {
             socialMenu->setOpacity(20);
@@ -96,37 +150,44 @@ class $modify(ProfilePage) {
 
     void loadPageFromUserInfo(GJUserScore* score) {
         ProfilePage::loadPageFromUserInfo(score);
-        loadRifctProfile(score->m_accountID);
+        loadPersonProfile(score->m_accountID);
     }
 };
 
 #include <Geode/modify/CCLabelBMFont.hpp>
 class $modify(CCLabelBMFont) {
     bool initWithString(const char *str, const char *fntFile, float width, CCTextAlignment alignment, CCPoint imageOffset) {
-        std::string rifct = str == nullptr ? "" : str;
-        replaceRifct(rifct);
-        return CCLabelBMFont::initWithString(rifct.c_str(), fntFile, width, alignment, imageOffset);
+        std::string newStr = str == nullptr ? "" : str;
+        replacePerson(newStr);
+        return CCLabelBMFont::initWithString(newStr.c_str(), fntFile, width, alignment, imageOffset);
     }
 
     void setString(const char *newString) {
-        std::string rifct = newString == nullptr ? "" : newString;
-        replaceRifct(rifct);
-        CCLabelBMFont::setString(rifct.c_str());
+        std::string newStr = newString == nullptr ? "" : newString;
+        replacePerson(newStr);
+        CCLabelBMFont::setString(newStr.c_str());
     }
 
-    std::string replaceRifct(std::string& string) {
+    void replacePerson(std::string& string) {
+        if (personAccountID <= 0)
+            return;
+
+        auto personLen = person.length();
+        if (personLen == 0)
+            return;
+
         std::string lowered = string;
-        for (auto& c : lowered) {
-            c = std::tolower(c);
-        }
+        lowerString(lowered);
 
         size_t pos = 0;
-        while ((pos = lowered.find("rifct", pos)) != std::string::npos) {
-            string.replace(pos + 2, 2, "**");
-            pos += 5;
+        while ((pos = lowered.find(person, pos)) != std::string::npos) {
+            if (personLen > 2) {
+                string.replace(pos + 2, 2, "**");
+            } else {
+                string.replace(pos, 1, "*");
+            }
+            pos += personLen;
         }
-
-        return string;
     }
 };
 
@@ -134,17 +195,17 @@ class $modify(CCLabelBMFont) {
 class $modify(CommentCell) {
     void loadFromComment(GJComment* comment) {
         CommentCell::loadFromComment(comment);
-        fixRifctValues();
+        fixPersonValues();
     }
 
-    void fixRifctValues() {
-        if (!isRifct(m_comment->m_accountID))
+    void fixPersonValues() {
+        if (!isPerson(m_comment->m_accountID))
             return;
 
         if (m_comment->m_likeCount <= 0)
             return;
 
-        int newLikeCount = 0 - m_comment->m_likeCount * 3;
+        int newLikeCount = 0 - m_comment->m_likeCount * ((rand() % 6) + 1);
 
         if (m_likeLabel) {
             m_likeLabel->setString(fmt::format("{}", newLikeCount).c_str());
@@ -157,7 +218,7 @@ class $modify(CommentCell) {
 
     void updateLabelValues() {
         CommentCell::updateLabelValues();
-        fixRifctValues();
+        fixPersonValues();
     }
 };
 
@@ -165,11 +226,11 @@ class $modify(CommentCell) {
 class $modify(LevelCell) {
     void loadCustomLevelCell() {
         LevelCell::loadCustomLevelCell();
-        fixRifctValues();
+        fixPersonValues();
     }
 
-    void fixRifctValues() {
-        if (!isRifct(m_level->m_accountID))
+    void fixPersonValues() {
+        if (!isPerson(m_level->m_accountID))
             return;
 
         int likeRatio = m_level->m_likes - m_level->m_dislikes;
@@ -203,16 +264,16 @@ class $modify(LevelCell) {
 #include <Geode/modify/LevelInfoLayer.hpp>
 class $modify(LevelInfoLayer) {
     struct Fields {
-        bool tryingToEnterStupidChudRifctLevel = false;
+        bool tryingToEnterStupidChudPersonLevel = false;
     };
 
     void updateLabelValues() {
         LevelInfoLayer::updateLabelValues();
-        fixRifctValues();
+        fixPersonValues();
     }
 
-    void fixRifctValues() {
-        if (!isRifct(m_level->m_accountID))
+    void fixPersonValues() {
+        if (!isPerson(m_level->m_accountID))
             return;
 
         int likeRatio = m_level->m_likes - m_level->m_dislikes;
@@ -228,25 +289,5 @@ class $modify(LevelInfoLayer) {
         m_likesIcon->setDisplayFrame(dislikeFrame);
 
         m_difficultySprite->updateFeatureState(GJFeatureState::None);
-    }
-
-    void onPlay(CCObject* sender) {
-        if (!isRifct(m_level->m_accountID)) {
-            LevelInfoLayer::onPlay(sender);
-            return;
-        }
-
-        if (m_fields->tryingToEnterStupidChudRifctLevel) {
-            LevelInfoLayer::onPlay(sender);
-            return;
-        }
-
-        createQuickPopup("Are you sure?", "This <cl>level</c> was made by <cr>Rifct</c>, are you <cy>sure</c> you want to play this?", "Cancel", "Yes", [this](FLAlertLayer* alert, bool btn2) {
-            if (!btn2)
-                return;
-
-            m_fields->tryingToEnterStupidChudRifctLevel = true;
-            LevelInfoLayer::onPlay(nullptr);
-        });
     }
 };
