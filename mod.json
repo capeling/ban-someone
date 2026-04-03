@@ -1,0 +1,17 @@
+{
+	"geode": "5.4.1",
+	"gd": {
+		"win": "2.2081",
+		"android": "2.2081",
+		"mac": "2.2081",
+		"ios": "2.2081"
+	},
+	"id": "capeling.ban-rifct-movement",
+	"name": "ban rifct movement",
+	"version": "v1.0.0",
+	"developer": "capeling",
+	"description": "ban rifct hes a chud",
+	"dependencies": {
+		"geode.node-ids": ">=v1.20.0"
+	}
+}
