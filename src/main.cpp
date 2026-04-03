@@ -69,16 +69,11 @@ $on_mod(Loaded) {
 class $modify(ProfilePage) {
 
     struct Fields {
-        bool loadedPerson = false;
         bool isPerson = false;
     };
 
     void loadPersonProfile(int accountID) {
         auto fields = m_fields.self();
-        if (fields->loadedPerson)
-            return;
-
-        fields->loadedPerson = true;
 
         if (!isPerson(accountID))
             return;
@@ -101,38 +96,40 @@ class $modify(ProfilePage) {
         if (!statsMenu)
             return;
 
+        float limitWidth = m_score->m_creatorPoints > 0 ? 50.f : 60.f;
+
         if (auto starsLabel = typeinfo_cast<CCLabelBMFont*>(statsMenu->getChildByIDRecursive("stars-label"))) {
             starsLabel->setString("2");
             starsLabel->setColor({255, 0, 0});
-            starsLabel->limitLabelWidth(50.f, 0.6f, 0.f);
+            starsLabel->limitLabelWidth(limitWidth, 0.6f, 0.f);
             starsLabel->getParent()->setContentWidth(starsLabel->getScaledContentWidth());
         }
 
         if (auto moonsLabel = typeinfo_cast<CCLabelBMFont*>(statsMenu->getChildByIDRecursive("moons-label"))) {
             moonsLabel->setString("7");
             moonsLabel->setColor({255, 0, 0});
-            moonsLabel->limitLabelWidth(50.f, 0.6f, 0.f);
+            moonsLabel->limitLabelWidth(limitWidth, 0.6f, 0.f);
             moonsLabel->getParent()->setContentWidth(moonsLabel->getScaledContentWidth());
         }
 
         if (auto gcoinsLabel = typeinfo_cast<CCLabelBMFont*>(statsMenu->getChildByIDRecursive("coins-label"))) {
             gcoinsLabel->setString("-1");
             gcoinsLabel->setColor({255, 0, 0});
-            gcoinsLabel->limitLabelWidth(50.f, 0.6f, 0.f);
+            gcoinsLabel->limitLabelWidth(limitWidth, 0.6f, 0.f);
             gcoinsLabel->getParent()->setContentWidth(gcoinsLabel->getScaledContentWidth());
         }
 
         if (auto ucoinsLabel = typeinfo_cast<CCLabelBMFont*>(statsMenu->getChildByIDRecursive("user-coins-label"))) {
             ucoinsLabel->setString("5");
             ucoinsLabel->setColor({255, 0, 0});
-            ucoinsLabel->limitLabelWidth(50.f, 0.6f, 0.f);
+            ucoinsLabel->limitLabelWidth(limitWidth, 0.6f, 0.f);
             ucoinsLabel->getParent()->setContentWidth(ucoinsLabel->getScaledContentWidth());
         }
 
         if (auto demonsLabel = typeinfo_cast<CCLabelBMFont*>(statsMenu->getChildByIDRecursive("demons-label"))) {
             demonsLabel->setString("0");
             demonsLabel->setColor({255, 0, 0});
-            demonsLabel->limitLabelWidth(50.f, 0.6f, 0.f);
+            demonsLabel->limitLabelWidth(limitWidth, 0.6f, 0.f);
             demonsLabel->getParent()->setContentWidth(demonsLabel->getScaledContentWidth());
         }
 
@@ -140,7 +137,7 @@ class $modify(ProfilePage) {
         if (auto creatorLabel = typeinfo_cast<CCLabelBMFont*>(statsMenu->getChildByIDRecursive("creator-points-label"))) {
             creatorLabel->setString("-67");
             creatorLabel->setColor({255, 0, 0});
-            creatorLabel->limitLabelWidth(50.f, 0.6f, 0.f);
+            creatorLabel->limitLabelWidth(limitWidth, 0.6f, 0.f);
             creatorLabel->getParent()->setContentWidth(creatorLabel->getScaledContentWidth());
         }
 
