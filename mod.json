@@ -14,11 +14,6 @@
 	"dependencies": {
 		"geode.node-ids": ">=v1.20.0"
 	},
-	"resources": {
-		"sprites": [
-			"resources/sprites/*.png"
-		]
-	},
 	"tags": [
 		"joke"
 	],
